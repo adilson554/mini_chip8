@@ -106,7 +106,8 @@ def opcode():
     global ram
     return (ram[pc]<<8 | ram[pc + 1]) 
     
-    
+##############################################################################
+
 def decode(opcode):
     global pc
     global vram
@@ -118,13 +119,14 @@ def decode(opcode):
     global st
     global dt
     
+    # --------------------------------------------------------------
     # 0x00E0
     if opcode == 0x00E0:
         print("limpar")
         vram = [0] * 64 * 32
         pc = pc + 2
         
-        
+    # --------------------------------------------------------------    
     # 00EE - RET
     elif opcode == 0x00EE:
         print('00EE - RET')
@@ -133,19 +135,20 @@ def decode(opcode):
         print(f'------------------------------sp:{sp} e {stack}')
         pc = pc + 2
         #TODO estudar e revisar esta instração.
-        
-        
+            
     # --------------------------------------------------------------    
     # 1NNN
     elif opcode & 0xF000 == 0x1000:
-        pc = (opcode & 0x0FFF) 
+        pc = (opcode & 0x0FFF)
+        
     # --------------------------------------------------------------    
     # 2nnn - CALL addr
     elif (opcode & 0xf000) == 0x2000:
         sp = sp + 1
         stack.append(pc)
         pc = (opcode & 0x0fff)
-        
+    
+    # --------------------------------------------------------------    
     # 3xkk - SE Vx, byte
     elif (opcode & 0xf000) == 0x3000:
         print('3xkk - SE Vx, byte')
@@ -156,6 +159,7 @@ def decode(opcode):
         pc = pc + 2
     #TODO verificar se precisa incrementar o pc
     
+    # --------------------------------------------------------------
     # 4XNN
     elif (opcode & 0xF000 == 0x4000):
         x = ((opcode & 0x0F00) >> 8)
@@ -164,6 +168,7 @@ def decode(opcode):
             pc = pc + 2
         pc = pc + 2
     
+    # --------------------------------------------------------------
     # 5xy0 - SE Vx, Vy
     elif (opcode & 0xf000) == 0x5000:
         print('5xy0 - SE Vx, Vy')
@@ -175,8 +180,7 @@ def decode(opcode):
     #TODO verificar se precisa incrementar o pc
     #TODO verificar se pode ser qualquer valor além do 0 na istrução 5xy0.
     
-
-        
+    # --------------------------------------------------------------   
     # 6XNN (set register VX)
     elif opcode & 0xF000 == 0x6000:
         #print(f'{pc:04X}: {opcode(pc):04X} - 6XNN (set register VX)')
@@ -184,7 +188,8 @@ def decode(opcode):
         kk = opcode & 0x00ff
         V[x] = kk
         pc += 2
-        
+    
+    # --------------------------------------------------------------
     # 7XNN (add value to register VX)
     elif opcode & 0xF000 == 0x7000:
         x = (opcode & 0x0F00) >> 8
@@ -192,7 +197,8 @@ def decode(opcode):
         V[x] = (V[x] + kk) & 0xff
         #print(f'{pc:04X}: {opcode(pc):04X} - 7XNN (add value to register VX): {V}')
         pc = pc + 2
-        
+    
+    # --------------------------------------------------------------
     # 8xy0 - LD Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0:
         print('8xy0 - LD Vx, Vy')
@@ -201,14 +207,16 @@ def decode(opcode):
         V[x] = V[y]
         pc = pc + 2
             
-        # 8xy1 - OR Vx, Vy
+    # --------------------------------------------------------------
+    # 8xy1 - OR Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 1:
         print('8xy1 - OR Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
         V[x] = (V[x] | V[y])
         pc = pc + 2
-            
+    
+    # --------------------------------------------------------------
     # 8xy2 - AND Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 2:
         print('8xy2 - AND Vx, Vy')
@@ -216,7 +224,8 @@ def decode(opcode):
         y = ((opcode & 0x00f0)>>4)
         V[x] = V[x] & V[y]
         pc = pc + 2 
-            
+    
+    # --------------------------------------------------------------
     # 8xy3 - XOR Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 3:
         print('8xy3 - XOR Vx, Vy')
@@ -224,7 +233,8 @@ def decode(opcode):
         y = ((opcode & 0x00f0)>>4)
         V[x] = V[x] ^ V[y]
         pc = pc + 2
-            
+    
+    # --------------------------------------------------------------
     # 8xy4 - ADD Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 4:
         print('8xy4 - ADD Vx, Vy')
@@ -237,7 +247,8 @@ def decode(opcode):
             V[0xf] = 0
         V[x] = soma & 0xff
         pc = pc + 2 
-            
+    
+    # --------------------------------------------------------------
     # 8xy5 - SUB Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 5:
         print('8xy5 - SUB Vx, Vy')
@@ -251,7 +262,7 @@ def decode(opcode):
         V[x] = subtracao & 0xff # pois o resultado pode ser negativo
         pc = pc + 2
             
-            
+    # --------------------------------------------------------------
     # 8xy6 - SHR Vx {, Vy}
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 6:
         print('8xy6 - SHR Vx {, Vy}')
@@ -259,18 +270,12 @@ def decode(opcode):
         y = ((opcode & 0x00f0)>>4)
         #V[0xf] = V[x] & 0x1 # V[0xf] recebe o ultimo bit de V[x]
         #V[x] = (V[x] >> 1)
-        
         V[0xf] = (V[x] & 0x1)
         V[x] = (V[x] >> 1) & 0xff
-        
-        
-        
-        
-        
         pc = pc + 2
         #TODO Estudar, pois há contradições em várias fontes
         
-        
+    # --------------------------------------------------------------    
     # 8xy7 - SUBN Vx, Vy
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 7:
         print('8xy7 - SUBN Vx, Vy')
@@ -283,7 +288,7 @@ def decode(opcode):
         V[x] = (V[y] - V[x]) & 0xff
         pc = pc + 2
             
-            
+    # --------------------------------------------------------------        
     # 8xyE - SHL Vx {, Vy}
     elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0x000E:
         print('8xyE - SHL Vx {, Vy}')
@@ -293,7 +298,8 @@ def decode(opcode):
         V[x] = ((V[x] << 1) & 0xff)
         pc = pc + 2
         #TODO estudar pois há divergencias
-        
+    
+    # --------------------------------------------------------------    
     # 9xy0 - SNE Vx, Vy
     elif ((opcode & 0xf000) == 0x9000):
         x = ((opcode & 0x0f00)>>8)
@@ -301,21 +307,20 @@ def decode(opcode):
         if V[x] != V[y]:
             pc = pc + 2
         pc = pc + 2
-        
-        
- 
-        
+    
+    # --------------------------------------------------------------       
     # ANNN
     elif opcode & 0xF000 == 0xA000:
         I = opcode & 0x0FFF
         pc = pc + 2
-        
+    
+    # --------------------------------------------------------------
     # BNNN
     elif opcode & 0xF000 == 0xB000:
         nnn = opcode & 0x0FFF
         pc = V[0] + nnn
-        
-        
+    
+    # --------------------------------------------------------------    
     # Cxkk - RND Vx, byte
     elif ((opcode & 0xf000) == 0xC000):
         print('Cxkk - RND Vx, byte')
@@ -323,40 +328,36 @@ def decode(opcode):
         kk = (opcode & 0x00ff)
         V[x] = (random.randint(0,255) & kk)
         pc = pc + 2
-        
-        
-        
-        
-        
+    
+    # --------------------------------------------------------------  
     # Fx07
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0015)):
         x = (opcode & 0x0F00) >> 8
         V[x] = dt
         pc = pc + 2 
-        
-        
-        
+     
+    # --------------------------------------------------------------
     # Fx15
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0015)):
         x = (opcode & 0x0F00) >> 8
         dt = V[x]
         pc = pc + 2 
-        
-        
-        
+    
+    # -------------------------------------------------------------- 
     # Fx18
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0018)):
         x = (opcode & 0x0F00) >> 8
         st = V[x]
         pc = pc + 2   
     
+    # -------------------------------------------------------------- 
     # Fx1E
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x001E)):
         x = (opcode & 0x0F00) >> 8
         I = I + V[x]
         pc = pc + 2   
-           
-
+    
+    # --------------------------------------------------------------
     # Fx33
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0033)):
         x = (opcode & 0x0F00) >> 8
@@ -367,7 +368,8 @@ def decode(opcode):
         ram[I + 1] = d
         ram[I + 2] = u
         pc = pc + 2
-        
+    
+    # --------------------------------------------------------------
     # Fx55
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0055)):
         x = (opcode & 0x0F00) >> 8
@@ -375,25 +377,20 @@ def decode(opcode):
             ram[I+i] = V[i]
         pc = pc + 2
     
-        
-        
-        
+    # --------------------------------------------------------------
     # Fx65
     elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0065)):
         x = (opcode & 0x0F00) >> 8
         for i in range(x+1):
             V[i] = ram[I+i]
         pc = pc + 2
-        
+
+    # --------------------------------------------------------------
     # DXYN (display/draw)
     elif(opcode & 0xF000 == 0xD000):
-        #print(f'{pc:04X}: {opcode(pc):04X} - DXYN (display/draw)')
-        
         x = V[(opcode & 0x0F00) >> 8]
         y = V[(opcode & 0x00F0) >> 4]
         height = opcode & 0x000F
-    
-
         V[0xF] = 0
         for yline in range(height):
             pixel = ram[I + yline]
@@ -404,11 +401,7 @@ def decode(opcode):
                     vram[x + xline + ((y + yline) * 64)] ^= 1
         draw_flag = True
         pc += 2
-        
-        
-        
-    
-        
+    # --------------------------------------------------------------
     else:
         print(f"não encontrado -- {hex(opcode)}")
         pc = pc + 2
