@@ -1,10 +1,5 @@
 '''
-3XNN ok		00EE ok	8XY5 ok
-4XNN ok		8XY0 ok	8XYE no
-5XY0 ok 	8XY1 ok	8XY6 ok
-7XNN ok		8XY2 ok	FX55 ok
-9XY0 ok 	8XY3 ok	FX33 ok
-2NNN ok		8XY4 ok	1NNN ok
+CHIP-8
 
 '''
 import random                # usado na instrução Cxkk
@@ -35,7 +30,7 @@ stack = [0] * 16
 sp = 0
 dt = 0
 st = 0
-key = [0] * 16
+#key = [0] * 16
 vram = [0] * 64 * 32
 draw_flag = True
 
@@ -67,11 +62,67 @@ for i in range(len(fontset)):
 
 
 
+################## Teclado
+'''
+teclado = [
+120, # X
+49, # 1
+50, # 2
+51, # 3
+52, # C
+113, # Q
+119, # W
+101, # E
+114, # R
+97, # A
+115, # S
+100, # D
+102, # F
+122, # Z
+99, # C
+118, # V
+]
+'''
+
+
+teclas = {
+120: 0x0,# X
+49: 0x1, # 1
+50: 0x2, # 2
+51: 0x3, # 3
+113: 0x4, # C
+119: 0x5, # Q
+101: 0x6, # W
+97: 0x7, # E
+115: 0x8, # R
+100: 0x9, # A
+122: 0xA, # S
+99: 0xB, # D
+52: 0xC, # F
+114: 0xD, # Z
+102: 0xE, # C
+118: 0xF # V
+}
+
+
+##########################
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###################
 # teste
-ram[0x1ff] = 2 # valor de 1 a 5
-ram[0x1fe] = 0
+ram[0x1ff] = 3 # valor de 1 a 5
+#ram[0x1fe] = 1
 
 '''
 ANNN
@@ -80,6 +131,24 @@ Fx65
 1NNN
 
 '''
+
+#================== EM IMPLEMENTAÇÃO 
+# implementar a função para captar a tecla digitada
+import tty, termios, sys
+def get_pressed():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    tty.setraw(sys.stdin.fileno())
+    ch = sys.stdin.read(1)
+    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    #sys.exit()
+    return ord(ch)
+
+#==================
+
+
+
+
 
 
 
@@ -92,7 +161,7 @@ Fx65
 ##############################################################################
 ################### Função carregar a rom ####################################
 def carregar_rom(memoria):
-    with open("../roms/chip8-test-suite.ch8", 'rb') as f:
+    with open("../roms/chip8-test-suite.ch8", 'rb') as f:    
         rom_byte = f.read()
         for i in range(len(rom_byte)):
             memoria[0x200 + i] = rom_byte[i]
@@ -120,14 +189,14 @@ def decode(opcode):
     global dt
     
     # --------------------------------------------------------------
-    # 0x00E0
+    # 00E0 - CLS
     if opcode == 0x00E0:
         print("limpar")
         vram = [0] * 64 * 32
         pc = pc + 2
         
     # --------------------------------------------------------------    
-    # 00EE - RET
+    # 00EE - RTS
     elif opcode == 0x00EE:
         print('00EE - RET')
         pc = stack.pop()
@@ -170,7 +239,7 @@ def decode(opcode):
     
     # --------------------------------------------------------------
     # 5xy0 - SE Vx, Vy
-    elif (opcode & 0xf000) == 0x5000:
+    elif ((opcode & 0xf000) == 0x5000) and ((opcode & 0x000f) == 0):
         print('5xy0 - SE Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = (opcode & 0x00f0)>>4
@@ -200,7 +269,7 @@ def decode(opcode):
     
     # --------------------------------------------------------------
     # 8xy0 - LD Vx, Vy
-    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0:
+    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0x0000:
         print('8xy0 - LD Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
@@ -209,11 +278,11 @@ def decode(opcode):
             
     # --------------------------------------------------------------
     # 8xy1 - OR Vx, Vy
-    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 1:
+    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0x0001:
         print('8xy1 - OR Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
-        V[x] = (V[x] | V[y])
+        V[x] = (V[x] | V[y]) & 0xff
         pc = pc + 2
     
     # --------------------------------------------------------------
@@ -250,16 +319,16 @@ def decode(opcode):
     
     # --------------------------------------------------------------
     # 8xy5 - SUB Vx, Vy
-    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 5:
+    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0x0005:
         print('8xy5 - SUB Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
-        if V[x] > V[y]:
+        subtracao = ((V[x] - V[y]) & 0xff)
+        V[x] = (subtracao) # pois o resultado pode ser negativo
+        if (V[x] > V[y]):
             V[0xf] = 1
         else:
             V[0xf] = 0
-        subtracao = V[x] - V[y]
-        V[x] = subtracao & 0xff # pois o resultado pode ser negativo
         pc = pc + 2
             
     # --------------------------------------------------------------
@@ -268,24 +337,25 @@ def decode(opcode):
         print('8xy6 - SHR Vx {, Vy}')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
-        #V[0xf] = V[x] & 0x1 # V[0xf] recebe o ultimo bit de V[x]
-        #V[x] = (V[x] >> 1)
-        V[0xf] = (V[x] & 0x1)
-        V[x] = (V[x] >> 1) & 0xff
+        V[0xf] = V[x] & 0x01 # V[0xf] recebe o ultimo bit de V[x]
+        V[x] = (V[x] >> 1) 
+
+
         pc = pc + 2
         #TODO Estudar, pois há contradições em várias fontes
         
     # --------------------------------------------------------------    
     # 8xy7 - SUBN Vx, Vy
-    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 7:
+    elif ((opcode & 0xf000) == 0x8000) and  ((opcode & 0x000f)) == 0x0007:
         print('8xy7 - SUBN Vx, Vy')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
+        
+        V[x] = (V[y] - V[x]) & 0xff
         if V[y] > V[x]:
             V[0xf] = 1
         else:
             V[0xf] = 0
-        V[x] = (V[y] - V[x]) & 0xff
         pc = pc + 2
             
     # --------------------------------------------------------------        
@@ -294,8 +364,10 @@ def decode(opcode):
         print('8xyE - SHL Vx {, Vy}')
         x = ((opcode & 0x0f00)>>8)
         y = ((opcode & 0x00f0)>>4)
-        V[0xf] = ((V[x]) >> 7)
+     
+
         V[x] = ((V[x] << 1) & 0xff)
+        V[0xf] = ((V[x]) >> 7)
         pc = pc + 2
         #TODO estudar pois há divergencias
     
@@ -328,12 +400,67 @@ def decode(opcode):
         kk = (opcode & 0x00ff)
         V[x] = (random.randint(0,255) & kk)
         pc = pc + 2
+        
+    # --------------------------------------------------------------
+    # DXYN (display/draw)
+    elif(opcode & 0xF000 == 0xD000):
+        x = V[(opcode & 0x0F00) >> 8]
+        y = V[(opcode & 0x00F0) >> 4]
+        height = opcode & 0x000F
+        V[0xF] = 0
+        for yline in range(height):
+            pixel = ram[I + yline]
+            for xline in range(8):
+                if (pixel & (0x80 >> xline)) != 0:
+                    if (vram[(x + xline + ((y + yline) * 64))] == 1):
+                        V[0xf] = 1
+                    vram[x + xline + ((y + yline) * 64)] ^= 1
+        draw_flag = True
+        pc += 2
+        
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------  
+    # EX9E - SKIP.KEY VX
+    elif (opcode & 0xF000 == 0xE000) and ((opcode & 0x00FF == 0x009E)):
+        x = (opcode & 0x0F00) >> 8
+        print("EX9E")
+        key = teclas[get_pressed()]
+        if  key == V[x]:
+            pc = pc + 2
+        pc = pc + 4
+    
+    # --------------------------------------------------------------
+    # EXA1 - SKIP.NOKEY VX
+    elif (opcode & 0xF000 == 0xE000) and ((opcode & 0x00FF == 0x00A1)):
+        x = (opcode & 0x0F00) >> 8
+        print("EXA1")
+        if teclas[get_pressed()] != V[x]:
+            pc = pc + 2
+        pc = pc + 4
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    
+    
+    
     
     # --------------------------------------------------------------  
     # Fx07
-    elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0015)):
+    elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x00FF == 0x0007)):
         x = (opcode & 0x0F00) >> 8
         V[x] = dt
+        pc = pc + 2 
+        
+    # --------------------------------------------------------------  
+    # Fx0A
+    elif (opcode & 0xF000 == 0xF000) and ((opcode & 0x000F == 0x000A)):
+        x = (opcode & 0x0F00) >> 8
+        print("FX0A")
+        key = teclas[get_pressed()]
+        V[x] = key
         pc = pc + 2 
      
     # --------------------------------------------------------------
@@ -385,22 +512,7 @@ def decode(opcode):
             V[i] = ram[I+i]
         pc = pc + 2
 
-    # --------------------------------------------------------------
-    # DXYN (display/draw)
-    elif(opcode & 0xF000 == 0xD000):
-        x = V[(opcode & 0x0F00) >> 8]
-        y = V[(opcode & 0x00F0) >> 4]
-        height = opcode & 0x000F
-        V[0xF] = 0
-        for yline in range(height):
-            pixel = ram[I + yline]
-            for xline in range(8):
-                if (pixel & (0x80 >> xline)) != 0:
-                    if (vram[(x + xline + ((y + yline) * 64))] == 1):
-                        V[0xf] = 1
-                    vram[x + xline + ((y + yline) * 64)] ^= 1
-        draw_flag = True
-        pc += 2
+    
     # --------------------------------------------------------------
     else:
         print(f"não encontrado -- {hex(opcode)}")
@@ -453,7 +565,7 @@ if __name__ == '__main__':
     '''
     k = 0
     while k < 2400: # 240
-        sleep(0.0016)
+        #sleep(0.0016)
         draw_screen(vram, draw_flag)
         decode(opcode())
         print(hex(ram[pc]), hex(pc))
